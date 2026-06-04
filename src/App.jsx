@@ -10,6 +10,8 @@ import LogWasteScreen from './screens/LogWasteScreen'
 import AlertsScreen from './screens/AlertsScreen'
 import SuccessScreen from './screens/SuccessScreen'
 import ReturnStockScreen from './screens/ReturnStockScreen'
+import SignUpScreen from './screens/SignUpScreen'
+import ForgotCodeScreen from './screens/ForgotCodeScreen'
 
 function ProtectedRoute({ children }) {
   const { session } = useApp()
@@ -69,6 +71,16 @@ function AppRoutes() {
         <ProtectedRoute>
           <ReturnStockScreen />
         </ProtectedRoute>
+      } />
+      <Route path="/signup" element={
+        <PublicRoute>
+          <SignUpScreen />
+        </PublicRoute>
+      } />
+      <Route path="/forgot-code" element={
+        <PublicRoute>
+          <ForgotCodeScreen />
+        </PublicRoute>
       } />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -46,8 +46,11 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",  # Vite dev server
-        "http://localhost:3000",  # alternative dev port
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:5175",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5175",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -89,6 +92,25 @@ class WasteCreate(BaseModel):
     reason: str
     estimated_loss: float
     shop_code: str
+
+
+class ShopCreate(BaseModel):
+    """Payload for registering a new shop."""
+    shop_name: str
+    owner_name: str
+    email: str
+
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
+
+import random
+import string
+
+def generate_access_code() -> str:
+    """Generate a unique 8-character access code (4 letters + 4 digits)."""
+    letters = "".join(random.choices(string.ascii_uppercase, k=4))
+    digits = "".join(random.choices(string.digits, k=4))
+    return letters + digits
 
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
@@ -188,3 +210,88 @@ def get_waste(shop_code: str = Query(..., description="Shop code to filter waste
         .execute()
     )
     return response.data
+
+
+# ── Shop endpoints ───────────────────────────────────────────────────────────
+
+@app.post("/shops", status_code=201)
+def create_shop(shop: ShopCreate):
+    """Register a new shop and return a generated access code."""
+    # Check for duplicate email
+    existing = (
+        supabase.table("shops")
+        .select("id")
+        .eq("email", shop.email.lower().strip())
+        .execute()
+    )
+    if existing.data:
+        raise HTTPException(
+            status_code=409,
+            detail="A shop with this email already exists."
+        )
+
+    # Generate a unique access code (retry up to 5 times on collision)
+    access_code = None
+    for _ in range(5):
+        code = generate_access_code()
+        code_check = (
+            supabase.table("shops")
+            .select("id")
+            .eq("access_code", code)
+            .execute()
+        )
+        if not code_check.data:
+            access_code = code
+            break
+    if not access_code:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to generate a unique access code. Please try again."
+        )
+
+    data = {
+        "shop_name": shop.shop_name.strip(),
+        "owner_name": shop.owner_name.strip(),
+        "email": shop.email.lower().strip(),
+        "access_code": access_code,
+    }
+
+    response = supabase.table("shops").insert(data).execute()
+    if not response.data:
+        raise HTTPException(status_code=400, detail="Failed to register shop")
+
+    return {"access_code": access_code, "shop_name": shop.shop_name.strip()}
+
+
+@app.get("/shops/verify")
+def verify_shop(email: str = Query(..., description="Email to look up access code")):
+    """Retrieve the access code for a given email (forgot access code flow)."""
+    response = (
+        supabase.table("shops")
+        .select("access_code, shop_name")
+        .eq("email", email.lower().strip())
+        .execute()
+    )
+    if not response.data:
+        raise HTTPException(
+            status_code=404,
+            detail="No shop found with that email address."
+        )
+    return response.data[0]
+
+
+@app.get("/shops/verify-by-code")
+def verify_access_code(access_code: str = Query(..., description="Access code to verify")):
+    """Verify if an access code exists in the shops table (for login validation)."""
+    response = (
+        supabase.table("shops")
+        .select("access_code, shop_name")
+        .eq("access_code", access_code.upper().strip())
+        .execute()
+    )
+    if not response.data:
+        raise HTTPException(
+            status_code=404,
+            detail="Invalid access code."
+        )
+    return {"valid": True, "shop_name": response.data[0]["shop_name"]}

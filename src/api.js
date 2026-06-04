@@ -160,3 +160,57 @@ export async function checkHealth() {
     return false;
   }
 }
+
+// ── Shop API ────────────────────────────────────────────────────────────────
+
+export async function registerShop(data) {
+  const url = `${API_BASE_URL}/shops`;
+  const payload = JSON.stringify({
+    shop_name: data.shopName,
+    owner_name: data.ownerName,
+    email: data.email,
+  });
+  console.log("[registerShop] POST", url, payload);
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: payload,
+  });
+
+  if (!res.ok) {
+    let detail = `API error: ${res.status}`;
+    try {
+      const body = await res.json();
+      if (body.detail) detail = body.detail;
+    } catch { /* ignore */ }
+    throw new Error(detail);
+  }
+
+  return res.json();
+}
+
+export async function verifyShop(email) {
+  const url = `${API_BASE_URL}/shops/verify?email=${encodeURIComponent(email)}`;
+  console.log("[verifyShop] GET", url);
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!res.ok) {
+    let detail = `API error: ${res.status}`;
+    try {
+      const body = await res.json();
+      if (body.detail) detail = body.detail;
+    } catch { /* ignore */ }
+    throw new Error(detail);
+  }
+
+  return res.json();
+}
+
+export async function verifyAccessCode(accessCode) {
+  return apiFetch(`/shops/verify-by-code?access_code=${encodeURIComponent(accessCode)}`);
+}

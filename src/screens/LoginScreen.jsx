@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
+import { verifyAccessCode } from '../api'
 
 const VALID_CODES = ['BLOOM2026', 'FLORA2026', 'PETAL2026']
 
@@ -11,20 +12,42 @@ export default function LoginScreen() {
   const [accessCodeError, setAccessCodeError] = useState('')
   const [shopName, setShopName] = useState('')
   const [staffName, setStaffName] = useState('')
+  const [loggingIn, setLoggingIn] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
+    setAccessCodeError('')
+
     if (!accessCode.trim()) {
-      setAccessCodeError('Invalid access code. Please contact BloomTrack support.')
+      setAccessCodeError('Please enter your access code.')
       return
     }
-    if (!VALID_CODES.includes(accessCode.trim().toUpperCase())) {
-      setAccessCodeError('Invalid access code. Please contact BloomTrack support.')
+    if (!shopName.trim() || !staffName.trim()) {
       return
     }
-    if (shopName.trim() && staffName.trim()) {
-      login(accessCode.trim().toUpperCase(), shopName.trim(), staffName.trim())
+
+    const code = accessCode.trim().toUpperCase()
+
+    // Accept hardcoded demo codes
+    if (VALID_CODES.includes(code)) {
+      login(code, shopName.trim(), staffName.trim())
       navigate('/dashboard')
+      return
+    }
+
+    // Verify against Supabase shops table for dynamically registered shops
+    setLoggingIn(true)
+    try {
+      const result = await verifyAccessCode(code)
+      if (result.valid) {
+        login(code, result.shop_name || shopName.trim(), staffName.trim())
+        navigate('/dashboard')
+        return
+      }
+    } catch (err) {
+      setAccessCodeError('Invalid access code. Please check and try again.')
+    } finally {
+      setLoggingIn(false)
     }
   }
 
@@ -84,8 +107,8 @@ export default function LoginScreen() {
           />
         </div>
 
-        <button type="submit" className="btn btn-primary btn-block" style={{ marginTop: 8 }}>
-          Start Managing Stock
+        <button type="submit" className="btn btn-primary btn-block" style={{ marginTop: 8 }} disabled={loggingIn}>
+          {loggingIn ? 'Logging in...' : 'Start Managing Stock'}
         </button>
 
         <div className="privacy-notice">
@@ -94,6 +117,17 @@ export default function LoginScreen() {
             We only collect what you need to manage your stock. No data is shared externally.
           </p>
         </div>
+
+        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 14 }}>
+          <Link to="/signup" style={{ color: 'var(--green-primary)', textDecoration: 'none', fontWeight: 600 }}>
+            New shop? Sign up here
+          </Link>
+        </p>
+        <p style={{ textAlign: 'center', marginTop: 8, fontSize: 13 }}>
+          <Link to="/forgot-code" style={{ color: 'var(--gray-medium)', textDecoration: 'none' }}>
+            Forgot access code?
+          </Link>
+        </p>
       </form>
     </div>
   )

@@ -17,6 +17,8 @@
     { "src": "/stock", "dest": "api/index.py" },
     { "src": "/stock/(.*)", "dest": "api/index.py" },
     { "src": "/waste", "dest": "api/index.py" },
+    { "src": "/shops", "dest": "api/index.py" },
+    { "src": "/shops/(.*)", "dest": "api/index.py" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
