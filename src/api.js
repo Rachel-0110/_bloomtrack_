@@ -6,7 +6,7 @@
  * continues using camelCase while the backend expects snake_case.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? '';
 
 // ── Field mapping helpers ───────────────────────────────────────────────────
 
