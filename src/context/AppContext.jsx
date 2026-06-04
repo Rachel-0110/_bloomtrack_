@@ -114,12 +114,16 @@ export function AppProvider({ children }) {
     }
   }
 
-  const markAsDiscounted = (id) => {
-    setStock(prev =>
-      prev.map(item =>
-        item.id === id ? { ...item, discounted: true } : item
-      )
-    )
+  const markAsDiscounted = async (id) => {
+    setError(null)
+    try {
+      await api.updateStock(id, { status: 'Discounted' })
+      await refreshStock()
+    } catch (err) {
+      console.error('Failed to mark as discounted:', err)
+      setError(err.message || 'Failed to mark as discounted')
+      throw err
+    }
   }
 
   const returnToSupplier = async (id) => {
@@ -208,8 +212,16 @@ export function AppProvider({ children }) {
 
   // ── Alerts ───────────────────────────────────────────────────────────────
 
-  const dismissAlert = (stockId) => {
-    setDismissedAlerts(prev => [...prev, stockId])
+  const dismissAlert = async (id) => {
+    setError(null)
+    try {
+      await api.updateStock(id, { status: 'Dismissed' })
+      await refreshStock()
+    } catch (err) {
+      console.error('Failed to dismiss alert:', err)
+      setError(err.message || 'Failed to dismiss')
+      throw err
+    }
   }
 
   // ── Toast ────────────────────────────────────────────────────────────────
@@ -227,6 +239,7 @@ export function AppProvider({ children }) {
 
   const getAgeingItems = () => {
     return stock.filter(item => {
+      if (item.status === 'Returned' || item.status === 'Dismissed') return false
       const days = getDaysSinceArrival(item.arrivalDate)
       return days >= 7
     })

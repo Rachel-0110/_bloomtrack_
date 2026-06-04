@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
+import formatCurrency from '../lib/formatCurrency'
 
 export default function LogWasteScreen() {
   const navigate = useNavigate()
@@ -52,7 +53,7 @@ export default function LogWasteScreen() {
         navigate('/success', {
           state: {
             title: 'Waste Logged',
-            detail: `${wasteQty} ${stockItem.flowerName} discarded — $${(wasteQty * (stockItem.costPerUnit || 0)).toFixed(2)} loss recorded.`,
+            detail: `${wasteQty} ${stockItem.flowerName} discarded — ${formatCurrency(wasteQty * (stockItem.costPerUnit || 0))} loss recorded.`,
             flowerName: stockItem.flowerName,
           }
         })
@@ -129,7 +130,7 @@ export default function LogWasteScreen() {
 
         {quantity && parseInt(quantity) > 0 && stockItem.costPerUnit > 0 && (
           <div className="estimated-loss">
-            Estimated Loss: ${(parseInt(quantity) * stockItem.costPerUnit).toFixed(2)}
+          Estimated Loss: {formatCurrency(parseInt(quantity) * stockItem.costPerUnit)}
           </div>
         )}
 

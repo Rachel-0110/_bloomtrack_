@@ -14,7 +14,7 @@ export default function BottomNav() {
       </NavLink>
       <NavLink to="/stock" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
         <span className="nav-icon">📦</span>
-        <span>Stock List</span>
+        <span>Stock</span>
       </NavLink>
       <NavLink to="/alerts" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
         <span className="nav-icon">🔔</span>
