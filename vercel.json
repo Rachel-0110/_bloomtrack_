@@ -4,9 +4,7 @@
     {
       "src": "package.json",
       "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
+      "config": { "distDir": "dist" }
     },
     {
       "src": "api/index.py",
@@ -14,10 +12,12 @@
     }
   ],
   "routes": [
-    { "src": "/health", "dest": "/api/index.py" },
-    { "src": "/stock", "dest": "/api/index.py" },
-    { "src": "/stock/(.*)", "dest": "/api/index.py" },
-    { "src": "/waste", "dest": "/api/index.py" },
+    { "src": "/assets/(.*)", "dest": "/assets/$1" },
+    { "src": "/health", "dest": "api/index.py" },
+    { "src": "/stock", "dest": "api/index.py" },
+    { "src": "/stock/(.*)", "dest": "api/index.py" },
+    { "src": "/waste", "dest": "api/index.py" },
+    { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
